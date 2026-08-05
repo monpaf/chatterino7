@@ -13,6 +13,7 @@
 #include "singletons/Logging.hpp"
 #include "singletons/Settings.hpp"
 #include "util/ChannelHelpers.hpp"
+#include <QTimer>
 
 namespace {
 
@@ -162,6 +163,22 @@ void Channel::addMessage(MessagePtr message, MessageContext context,
     }
 
     message->freeze();
+    // =========================================================================
+    // FIRST-TIME CHATTER AUTO-GREETING MODULE
+    // =========================================================================
+    if (message && message->flags.has(MessageFlag::FirstMessage) &&
+        !message->flags.has(MessageFlag::System))
+    {
+        // Check if the current channel is "jinnytty" (case-insensitive)
+        // if (this->getName().toLower() == "jinnytty")
+        // {
+            // Delay sending the message by 2.5 seconds to feel natural
+            QTimer::singleShot(2500, [this]() {
+                this->sendMessage("FirstTimeChatter");
+            });
+        // }
+    }
+    // =========================================================================
 
     MessagePtr deleted;
 
