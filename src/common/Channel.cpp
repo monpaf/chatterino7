@@ -5,14 +5,18 @@
 #include "common/Channel.hpp"
 
 #include "Application.hpp"
+#include "controllers/accounts/AccountController.hpp"
 #include "messages/Emote.hpp"
 #include "messages/Message.hpp"
 #include "messages/MessageBuilder.hpp"
 #include "messages/MessageElement.hpp"
 #include "messages/MessageSimilarity.hpp"
+#include "providers/twitch/TwitchAccount.hpp"
 #include "singletons/Logging.hpp"
 #include "singletons/Settings.hpp"
 #include "util/ChannelHelpers.hpp"
+
+#include <QTimer>
 
 namespace {
 
@@ -162,6 +166,29 @@ void Channel::addMessage(MessagePtr message, MessageContext context,
     }
 
     message->freeze();
+
+    // =========================================================================
+    // FIRST-TIME CHATTER AUTO-GREETING MODULE
+    // =========================================================================
+    if (message && message->flags.has(MessageFlag::FirstMessage) &&
+        !message->flags.has(MessageFlag::System))
+    {
+        if (this->getName().toLower() == "jinnytty")
+        {
+            auto twitchAccount = getApp()->getAccounts()->twitch.getCurrent();
+            bool isSelf = twitchAccount && (message->loginName.compare(
+                                                twitchAccount->getUserName(),
+                                                Qt::CaseInsensitive) == 0);
+
+            if (!isSelf)
+            {
+                QTimer::singleShot(2500, [this]() {
+                    this->sendMessage("FirstTimeChatter");
+                });
+            }
+        }
+    }
+    // =========================================================================
 
     MessagePtr deleted;
 
