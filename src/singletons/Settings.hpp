@@ -148,6 +148,13 @@ public:
 
     void disableSave();
 
+    // --- Inside src/singletons/Settings.hpp ---
+    // Place near other general settings declarations:
+
+    BoolSetting enableFirstTimeChatterGreeting{"/firstTimeChatter/enabled",
+                                               false};
+    IntSetting firstTimeChatterDelayMs{"/firstTimeChatter/delayMs", 2000};
+
     /// Returns true if chat messages should be sent over Helix
     bool shouldSendHelixChat() const;
 

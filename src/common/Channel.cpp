@@ -170,7 +170,8 @@ void Channel::addMessage(MessagePtr message, MessageContext context,
     // =========================================================================
     // FIRST-TIME CHATTER AUTO-GREETING MODULE
     // =========================================================================
-    if (message && message->flags.has(MessageFlag::FirstMessage) &&
+    if (getSettings()->enableFirstTimeChatterGreeting && message &&
+        message->flags.has(MessageFlag::FirstMessage) &&
         !message->flags.has(MessageFlag::System))
     {
         if (this->getName().toLower() == "jinnytty")
@@ -182,7 +183,8 @@ void Channel::addMessage(MessagePtr message, MessageContext context,
 
             if (!isSelf)
             {
-                QTimer::singleShot(2500, [this]() {
+                int delay = getSettings()->firstTimeChatterDelayMs;
+                QTimer::singleShot(delay, [this]() {
                     this->sendMessage("FirstTimeChatter");
                 });
             }

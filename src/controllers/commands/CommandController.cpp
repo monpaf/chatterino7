@@ -49,6 +49,7 @@
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchCommon.hpp"
 #include "singletons/Paths.hpp"
+#include "singletons/Settings.hpp"
 #include "util/CombinePath.hpp"
 #include "util/QStringHash.hpp"
 
@@ -526,6 +527,67 @@ CommandController::CommandController(const Paths &paths)
 
     this->registerCommand("/c2-set-logging-rules", &commands::setLoggingRules);
     this->registerCommand("/c2-theme-autoreload", &commands::toggleThemeReload);
+    this->registerCommand("/c2-set-logging-rules", &commands::setLoggingRules);
+    this->registerCommand("/c2-theme-autoreload", &commands::toggleThemeReload);
+
+    // =========================================================================
+    // FIRST-TIME CHATTER AUTO-GREETING COMMAND (/ftc)
+    // =========================================================================
+    this->registerCommand("/ftc", [](const CommandContext &ctx) -> QString {
+        if (!ctx.channel)
+        {
+            return {};
+        }
+
+        if (ctx.words.size() < 2)
+        {
+            bool currentEnabled = getSettings()->enableFirstTimeChatterGreeting;
+            int currentDelay = getSettings()->firstTimeChatterDelayMs;
+
+            ctx.channel->addSystemMessage(
+                QString("First-Time Chatter Auto-Greeting: %1 | Delay: %2ms\n"
+                        "Usage: /ftc [on|off|toggle] [delay_ms]")
+                    .arg(currentEnabled ? "ENABLED" : "DISABLED")
+                    .arg(currentDelay));
+            return {};
+        }
+
+        QString action = ctx.words.at(1).toLower();
+
+        if (action == "on" || action == "enable" || action == "true")
+        {
+            getSettings()->enableFirstTimeChatterGreeting = true;
+        }
+        else if (action == "off" || action == "disable" || action == "false")
+        {
+            getSettings()->enableFirstTimeChatterGreeting = false;
+        }
+        else if (action == "toggle")
+        {
+            getSettings()->enableFirstTimeChatterGreeting =
+                !getSettings()->enableFirstTimeChatterGreeting;
+        }
+
+        if (ctx.words.size() >= 3)
+        {
+            bool ok = false;
+            int newDelay = ctx.words.at(2).toInt(&ok);
+            if (ok && newDelay >= 0)
+            {
+                getSettings()->firstTimeChatterDelayMs = newDelay;
+            }
+        }
+
+        bool nowEnabled = getSettings()->enableFirstTimeChatterGreeting;
+        int nowDelay = getSettings()->firstTimeChatterDelayMs;
+
+        ctx.channel->addSystemMessage(
+            QString("First-Time Chatter Auto-Greeting set to: %1 (Delay: %2ms)")
+                .arg(nowEnabled ? "ENABLED" : "DISABLED")
+                .arg(nowDelay));
+
+        return {};
+    });
 }
 
 void CommandController::save()
